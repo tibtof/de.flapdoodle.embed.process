@@ -25,6 +25,7 @@ package de.flapdoodle.embed.process.config.store;
 
 import de.flapdoodle.embed.process.distribution.Distribution;
 
+@FunctionalInterface
 public interface PackageResolver {
 	DistributionPackage packageFor(Distribution distribution);
 }
