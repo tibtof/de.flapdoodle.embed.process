@@ -23,6 +23,8 @@
  */
 package de.flapdoodle.embed.process.io.progress;
 
+import de.flapdoodle.embed.process.types.Percent;
+
 /**
  *
  */
@@ -32,17 +34,17 @@ public class StandardConsoleProgressListener implements ProgressListener {
 	private int lastPercent = -1;
 
 	@Override
-	public void progress(String label, int percent) {
+	public void progress(String label, Percent percent) {
 		if (!label.equals(lastLabel)) {
 			System.out.print(label);
 			System.out.print(" ");
 		}
-		if (percent != lastPercent) {
+		if (percent.value() != lastPercent) {
 			System.out.print(percent);
 			System.out.print("% ");
 		}
 		lastLabel = label;
-		lastPercent = percent;
+		lastPercent = percent.value();
 	}
 
 	@Override

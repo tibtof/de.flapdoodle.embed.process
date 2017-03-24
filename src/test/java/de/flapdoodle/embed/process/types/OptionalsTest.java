@@ -23,7 +23,38 @@
  */
 package de.flapdoodle.embed.process.types;
 
-import org.immutables.value.Value;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
-@Value.Immutable @Wrapped
-public abstract class _DownloadPath extends Wrapper<String> {}
+import java.io.IOException;
+import java.util.Optional;
+
+import org.junit.Test;
+
+public class OptionalsTest {
+
+	@Test
+	public void mapOptionalWithThrowingFunction() {
+		try {
+			String asString = Optionals.wrap(Optional.of(2))
+				.map(i -> asString(i))
+				.get();
+			assertEquals("2", asString);
+		}
+		catch (IOException e) {
+			fail("shoud not happen");
+		}
+	}
+
+	@Test
+	public void mapOptionalWithNormalFunction() {
+		String asString = Optionals.wrap(Optional.of(2))
+			.map(i -> ""+i)
+			.get();
+		assertEquals("2", asString);
+	}
+	
+	private String asString(Integer integer) throws IOException {
+		return ""+integer;
+	}
+}

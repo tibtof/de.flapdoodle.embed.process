@@ -23,16 +23,42 @@
  */
 package de.flapdoodle.embed.process.io.progress;
 
+import java.util.Optional;
+
+import de.flapdoodle.embed.process.types.Percent;
+
 /**
  * Progress listener interface
  */
 public interface ProgressListener {
 
-	void progress(String label, int percent);
+	void progress(String label, Percent percent);
 
 	void done(String label);
 
 	void start(String label);
 
 	void info(String label, String message);
+	
+	interface ProgressEvent {
+		Optional<String> message();
+	}
+	
+	interface ProgessChanged extends ProgressEvent {
+		Percent percent();
+		
+		
+	}
+	
+	interface Starting extends ProgressEvent {
+		
+	}
+	
+	interface Done extends ProgressEvent {
+		
+	}
+	
+	interface Info extends ProgressEvent {
+		
+	}
 }

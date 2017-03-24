@@ -23,7 +23,47 @@
  */
 package de.flapdoodle.embed.process.types;
 
-import org.immutables.value.Value;
+import org.immutables.value.Value.Auxiliary;
+import org.immutables.value.Value.Check;
+import org.immutables.value.Value.Immutable;
+import org.immutables.value.Value.Parameter;
 
-@Value.Immutable @Wrapped
-public abstract class _DownloadPath extends Wrapper<String> {}
+import de.flapdoodle.transition.Preconditions;
+
+@Immutable
+public abstract class Percent {
+
+	private static final int MIN = 0;
+	private static final int MAX = 100;
+
+	@Parameter
+	public abstract int value();
+	
+	@Auxiliary
+	public boolean isMax() {
+		return value()==MAX;
+	}
+	
+	@Auxiliary
+	public boolean isMin() {
+		return value()==MIN;
+	}
+	
+	@Check
+	protected void check() {
+		Preconditions.checkArgument(value()>=MIN, "%s < 0",value());
+		Preconditions.checkArgument(value()<=MAX, "%s > 100",value());
+	}
+	
+	public static Percent of(int value) {
+		return ImmutablePercent.of(value);
+	}
+
+	public static Percent max() {
+		return of(MAX);
+	}
+	
+	public static Percent min() {
+		return of(MIN);
+	}
+}

@@ -23,6 +23,8 @@
  */
 package de.flapdoodle.embed.process.io.progress;
 
+import de.flapdoodle.embed.process.types.Percent;
+
 /**
  *
  */
@@ -38,13 +40,8 @@ public class ConsoleOneLineProgressListener implements ProgressListener {
 	private int lastIdx = 0;
 
 	@Override
-	public void progress(String label, int percent) {
-		if (percent < 0)
-			throw new IllegalArgumentException("Percent < 0: " + percent);
-		if (percent > ONE_HUNDRED_PERCENT)
-			throw new IllegalArgumentException("Percent > 100: " + percent);
-
-		if (lastPercent == percent) {
+	public void progress(String label, Percent percent) {
+		if (lastPercent == percent.value()) {
 			lastIdx++;
 			if (lastIdx >= CLOCK.length)
 				lastIdx = 0;
@@ -55,10 +52,10 @@ public class ConsoleOneLineProgressListener implements ProgressListener {
 		StringBuilder sb = new StringBuilder();
 		sb.append(label).append(" ");
 		int lineLength = LINE_LEN - label.length() - 1;
-		int percLength = percent * lineLength / ONE_HUNDRED_PERCENT;
+		int percLength = percent.value() * lineLength / ONE_HUNDRED_PERCENT;
 
 		sb.append(makeString(BAR_DONE, percLength));
-		if (percent < ONE_HUNDRED_PERCENT) {
+		if (percent.value() < ONE_HUNDRED_PERCENT) {
 			sb.append(CLOCK[lastIdx]);
 			sb.append(makeString(BAR_TODO, lineLength - percLength));
 		} else {
@@ -66,7 +63,7 @@ public class ConsoleOneLineProgressListener implements ProgressListener {
 		}
 		sb.append("\r");
 
-		lastPercent = percent;
+		lastPercent = percent.value();
 
 		System.out.print(sb.toString());
 	}

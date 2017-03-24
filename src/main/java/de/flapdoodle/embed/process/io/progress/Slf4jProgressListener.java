@@ -25,6 +25,8 @@ package de.flapdoodle.embed.process.io.progress;
 
 import org.slf4j.Logger;
 
+import de.flapdoodle.embed.process.types.Percent;
+
 public class Slf4jProgressListener implements ProgressListener {
 
     private final Logger logger;
@@ -37,11 +39,11 @@ public class Slf4jProgressListener implements ProgressListener {
 
 
     @Override
-    public void progress(String label, int percent) {
-        if (percent != lastPercent && percent % 10 == 0) {
+    public void progress(String label, Percent percent) {
+        if (percent.value() != lastPercent && percent.value() % 10 == 0) {
             logger.info("{} : {} %", label, percent);
         }
-        lastPercent = percent;
+        lastPercent = percent.value();
     }
 
     @Override

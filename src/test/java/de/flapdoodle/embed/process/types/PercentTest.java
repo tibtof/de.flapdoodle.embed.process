@@ -23,7 +23,12 @@
  */
 package de.flapdoodle.embed.process.types;
 
-import org.immutables.value.Value;
+import org.junit.Test;
 
-@Value.Immutable @Wrapped
-public abstract class _DownloadPath extends Wrapper<String> {}
+public class PercentTest {
+
+	@Test(expected = IllegalArgumentException.class)
+	public void invalidValue() {
+		Percent.of(-1);
+	}
+}

@@ -41,6 +41,7 @@ import de.flapdoodle.embed.process.distribution.Distribution;
 import de.flapdoodle.embed.process.io.directories.PropertyOrPlatformTempDir;
 import de.flapdoodle.embed.process.io.file.Files;
 import de.flapdoodle.embed.process.io.progress.ProgressListener;
+import de.flapdoodle.embed.process.types.Percent;
 
 /**
  * Class for downloading runtime
@@ -59,12 +60,13 @@ public class Downloader implements IDownloader {
 	@Override
 	public File download(DownloadConfig downloadConfig, Distribution distribution) throws IOException {
 
-		String progressLabel = "Download " + distribution;
 		ProgressListener progress = downloadConfig.getProgressListener();
-		progress.start(progressLabel);
-
 		File ret = Files.createTempFile(PropertyOrPlatformTempDir.defaultInstance(), downloadConfig.getFileNaming()
 				.nameFor(downloadConfig.getDownloadPrefix(), "." + downloadConfig.getPackageResolver().packageFor(distribution).archiveType()));
+		
+		String progressLabel = "Download " + distribution;
+		progress.start(progressLabel);
+		
 		if (ret.canWrite()) {
 
 			BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(ret));
@@ -78,8 +80,6 @@ public class Downloader implements IDownloader {
 			
 			if (length == -1) length = DEFAULT_CONTENT_LENGTH;
 
-
-
 			long downloadStartedAt = System.currentTimeMillis();
 			
 			try {
@@ -92,7 +92,7 @@ public class Downloader implements IDownloader {
 					readCount = readCount + read;
 					if (readCount > length) length = readCount;
 
-					progress.progress(progressLabel, (int) (readCount * READ_COUNT_MULTIPLIER / length));
+					progress.progress(progressLabel, Percent.of((int) (readCount * READ_COUNT_MULTIPLIER / length)));
 				}
 				progress.info(progressLabel, "downloaded with " + downloadSpeed(downloadStartedAt,length));
 			} finally {
@@ -109,10 +109,18 @@ public class Downloader implements IDownloader {
 
 	private InputStreamAndLength downloadInputStream(DownloadConfig downloadConfig, Distribution distribution)
 			throws MalformedURLException, IOException {
+		
+		String userAgent = downloadConfig.getUserAgent();
+		TimeoutConfig timeoutConfig = downloadConfig.getTimeoutConfig();
+		
 		URL url = new URL(getDownloadUrl(downloadConfig, distribution));
 		
 		Optional<Proxy> proxy = downloadConfig.proxyFactory().map(f -> f.createProxy());
 		
+		return download(url, proxy, timeoutConfig, userAgent);
+	}
+
+	private static InputStreamAndLength download(URL url, Optional<Proxy> proxy, TimeoutConfig timeoutConfig, String userAgent) throws IOException {
 		try {
 			URLConnection openConnection;
 			if (proxy.isPresent()) {
@@ -120,12 +128,11 @@ public class Downloader implements IDownloader {
 			} else {
 				openConnection = url.openConnection();
 			}
-			openConnection.setRequestProperty("User-Agent",downloadConfig.getUserAgent());
+			openConnection.setRequestProperty("User-Agent",userAgent);
 			
-			TimeoutConfig timeoutConfig = downloadConfig.getTimeoutConfig();
 			
 			openConnection.setConnectTimeout(timeoutConfig.getConnectionTimeout());
-			openConnection.setReadTimeout(downloadConfig.getTimeoutConfig().getReadTimeout());
+			openConnection.setReadTimeout(timeoutConfig.getReadTimeout());
 	
 			InputStream downloadStream = openConnection.getInputStream();
 	

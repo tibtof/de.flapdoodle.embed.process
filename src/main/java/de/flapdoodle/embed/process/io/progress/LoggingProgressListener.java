@@ -26,6 +26,8 @@ package de.flapdoodle.embed.process.io.progress;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import de.flapdoodle.embed.process.types.Percent;
+
 public class LoggingProgressListener implements ProgressListener {
 
 	private final Logger _logger;
@@ -42,8 +44,8 @@ public class LoggingProgressListener implements ProgressListener {
 	}
 
 	@Override
-	public void progress(String label, int percent) {
-		_logger.log(_level,label + ": " + percent + "% achieved.");
+	public void progress(String label, Percent percent) {
+		_logger.log(_level,label + ": " + percent.value() + "% achieved.");
 	}
 
 	@Override
