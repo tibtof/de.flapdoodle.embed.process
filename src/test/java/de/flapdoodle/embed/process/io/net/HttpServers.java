@@ -68,6 +68,18 @@ public class HttpServers {
 	}
 
 	public static Response response(int status, String mimeType, byte[] data) {
-		return NanoHTTPD.newFixedLengthResponse(Status.lookup(status), mimeType, new ByteArrayInputStream(data), data.length);
+		return response(status, mimeType, data, data.length);
 	}
+
+	public static Response response(int status, String mimeType, byte[] data, int contentLength) {
+		Response ret = NanoHTTPD.newFixedLengthResponse(Status.lookup(status), mimeType, new ByteArrayInputStream(data), data.length);
+		ret.addHeader("Content-Length", ""+contentLength);
+		return ret;
+				
+	}
+	
+	public static Response chunkedResponse(int status, String mimeType, byte[] data) {
+		return NanoHTTPD.newChunkedResponse(Status.lookup(status), mimeType, new ByteArrayInputStream(data));
+	}
+
 }

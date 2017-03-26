@@ -26,13 +26,16 @@ package de.flapdoodle.embed.process.io.net;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -47,7 +50,35 @@ import de.flapdoodle.embed.process.runtime.Network;
 public class UrlStreamsTest {
 
 	@Test
-	public void downloadShouldBeComplete() throws IOException {
+	public void downloadShouldBeMovedToDestinationOnSuccess() throws MalformedURLException, IOException {
+		int httpPort = Network.getFreeServerPort();
+		long contentLengt = 2*1024*1024;
+		byte[] content = randomFilledByteArray((int) contentLengt);
+		
+		Path destination = Files.createTempFile("moveToThisFile", "");
+		Files.delete(destination);
+		
+		try (HttpServers.Server server = HttpServers.httpServer(httpPort, (uri, method, headers, parms, files) -> Optional.empty())) {
+			URLConnection connection = new URL("http://localhost:123/toLong?foo=bar").openConnection();
+			UrlStreams.downloadTo(connection, destination, url -> {
+				Path downloadMock = Files.createTempFile("moveThis", "");
+				Files.write(downloadMock, content, StandardOpenOption.TRUNCATE_EXISTING);
+				return downloadMock;
+			});
+		}
+		
+		File asFile = destination.toFile();
+		assertTrue(asFile.exists());
+		assertTrue(asFile.isFile());
+		
+		byte[] transferedBytes = Files.readAllBytes(destination);
+		assertSameContent(content, transferedBytes);
+		
+		Files.delete(destination);
+	}
+	
+	@Test
+	public void downloadShouldBeCompleteAndMatchContent() throws IOException {
 		int httpPort = Network.getFreeServerPort();
 		long contentLengt = 2*1024*1024;
 		byte[] content = randomFilledByteArray((int) contentLengt);
@@ -59,7 +90,7 @@ public class UrlStreamsTest {
 			return Optional.empty();
 		};
 		
-		List<Long> downloadSizes = new ArrayList();
+		List<Long> downloadSizes = new ArrayList<>();
 		
 		try (HttpServers.Server server = HttpServers.httpServer(httpPort, listener)) {
 			URLConnection connection = new URL("http://localhost:"+httpPort+"/download?foo=bar").openConnection();
@@ -93,6 +124,95 @@ public class UrlStreamsTest {
 		assertTrue(downloadSizesBiggerThanContentLength.isEmpty());
 	}
 
+	@Test
+	public void downloadWithoutContentLengthShouldWorkToo() throws IOException {
+		int httpPort = Network.getFreeServerPort();
+		long contentLengt = 2*1024*1024;
+		byte[] content = randomFilledByteArray((int) contentLengt);
+		
+		HttpServers.Listener listener=(uri, method, headers, parms, files) -> {
+			if (uri.equals("/download")) {
+				return Optional.of(HttpServers.chunkedResponse(200, "text/text", content));
+			}
+			return Optional.empty();
+		};
+		
+		List<Long> downloadSizes = new ArrayList<>();
+		
+		try (HttpServers.Server server = HttpServers.httpServer(httpPort, listener)) {
+			URLConnection connection = new URL("http://localhost:"+httpPort+"/download?foo=bar").openConnection();
+			
+			DownloadCopyListener copyListener=(bytesCopied, downloadContentLength) -> {
+				downloadSizes.add(bytesCopied);
+				assertEquals("contentLengt", -1, downloadContentLength);
+			};
+			Path destination = UrlStreams.downloadIntoTempFile(connection, copyListener);
+			assertNotNull(destination);
+			
+			File asFile = destination.toFile();
+			assertTrue(asFile.exists());
+			assertTrue(asFile.isFile());
+			byte[] transferedBytes = Files.readAllBytes(destination);
+			assertSameContent(content, transferedBytes);
+			
+			Files.delete(destination);
+		}
+		
+		List<Long> downloadSizesMatchingFullDownload = downloadSizes.stream()
+		 	.filter(l -> l == contentLengt)
+		 	.collect(Collectors.toList());
+		
+		assertEquals(1,downloadSizesMatchingFullDownload.size());
+		
+		List<Long> downloadSizesBiggerThanContentLength = downloadSizes.stream()
+			.filter(l -> l > contentLengt)
+			.collect(Collectors.toList());
+		
+		assertTrue(downloadSizesBiggerThanContentLength.isEmpty());
+	}
+	
+	@Test
+	public void downloadShouldFailIfContentLengthDoesNotMatch() throws IOException {
+		int httpPort = Network.getFreeServerPort();
+		long contentLengt = 2*1024*1024;
+		byte[] content = randomFilledByteArray((int) contentLengt);
+		
+		HttpServers.Listener listener=(uri, method, headers, parms, files) -> {
+			if (uri.equals("/toShort")) {
+				return Optional.of(HttpServers.response(200, "text/text", content, content.length*2));
+			}
+			if (uri.equals("/toLong")) {
+				return Optional.of(HttpServers.response(200, "text/text", content, content.length/2));
+			}
+			return Optional.empty();
+		};
+		
+		try (HttpServers.Server server = HttpServers.httpServer(httpPort, listener)) {
+			
+			try {
+				URLConnection connection = new URL("http://localhost:"+httpPort+"/toShort?foo=bar").openConnection();
+				UrlStreams.downloadIntoTempFile(connection, (bytesCopied, downloadContentLength) -> {
+				});
+				fail("should not reach this");
+			} catch (IllegalArgumentException iax) {
+				assertTrue(iax.getLocalizedMessage().contains("partial"));
+			}
+			
+			boolean weCanFakeNanoHttpToSendMoreStuffThanInContentLength=false;
+			if (weCanFakeNanoHttpToSendMoreStuffThanInContentLength) {
+				try {
+					URLConnection connection = new URL("http://localhost:"+httpPort+"/toLong?foo=bar").openConnection();
+					UrlStreams.downloadIntoTempFile(connection, (bytesCopied, downloadContentLength) -> {
+					});
+					fail("should not reach this");
+				} catch (IllegalArgumentException iax) {
+					assertTrue(iax.getLocalizedMessage().contains("partial"));
+				}
+			}
+
+		}
+	}
+	
 	private void assertSameContent(byte[] expected, byte[] result) {
 		assertEquals("length", expected.length, result.length);
 		for (int i=0;i<expected.length;i++) {

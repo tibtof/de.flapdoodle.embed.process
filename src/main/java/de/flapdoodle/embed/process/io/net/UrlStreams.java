@@ -33,7 +33,6 @@ import java.net.Proxy;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 
 import de.flapdoodle.embed.process.config.store.DownloadConfig;
@@ -81,13 +80,22 @@ public abstract class UrlStreams {
 	protected static <E extends Exception> void downloadTo(URLConnection connection, Path destination, ThrowingFunction<URLConnection, Path, E> urlToTempFile) throws IOException,E {
 		Preconditions.checkArgument(!destination.toFile().exists(), "destination exists");
 		Path tempFile = urlToTempFile.apply(connection);
-		java.nio.file.Files.copy(tempFile, destination, StandardCopyOption.ATOMIC_MOVE);
+		java.nio.file.Files.copy(tempFile, destination);
+		java.nio.file.Files.delete(tempFile);
 	}
 	
 	protected static Path downloadIntoTempFile(URLConnection connection, DownloadCopyListener copyListener) throws IOException, FileNotFoundException {
 		Path tempFile = java.nio.file.Files.createTempFile("download", "");
-		downloadAndCopy(connection, () -> new BufferedOutputStream(new FileOutputStream(tempFile.toFile())), copyListener);
-		return tempFile;
+		boolean downloadSucceeded=false; 
+		try {
+			downloadAndCopy(connection, () -> new BufferedOutputStream(new FileOutputStream(tempFile.toFile())), copyListener);
+			downloadSucceeded=true;
+			return tempFile;
+		} finally {
+			if (!downloadSucceeded) {
+				java.nio.file.Files.delete(tempFile);
+			}
+		}
 	}
 
 	private static <E extends Exception> void downloadAndCopy(URLConnection connection, ThrowingSupplier<BufferedOutputStream, E> output, DownloadCopyListener copyListener) throws IOException, E {
@@ -100,9 +108,11 @@ public abstract class UrlStreams {
 				while ((read = bis.read(buf)) != -1) {
 					bos.write(buf, 0, read);
 					readCount = readCount + read;
+					Preconditions.checkArgument(length==-1 || length>=readCount, "hmm.. readCount bigger than contentLength(more than we want to): %s > %s",readCount, length);
 					copyListener.downloaded(readCount, length);
 				}
 				bos.flush();
+				Preconditions.checkArgument(length==-1 || length==readCount, "hmm.. readCount smaller than contentLength(partial download?): %s > %s",readCount, length);
 			}
 		}
 	}
