@@ -23,6 +23,23 @@
  */
 package de.flapdoodle.embed.process.types;
 
+import java.util.function.Function;
+
 public interface ThrowingConsumer<T, E extends Exception> {
 	void accept(T value) throws E;
+	
+	default <N extends Exception> ThrowingConsumer<T, N> mapException(Function<E, N> exceptionMapper) {
+		return (value) -> {
+			try {
+				this.accept(value);
+			} catch (Exception e) {
+				throw exceptionMapper.apply((E) e);
+			}
+		};
+	}
+	
+	default ThrowingConsumer<T, RuntimeException> mapToRuntimeException() {
+		return mapException(e -> new RuntimeException(e));
+	}
+
 }

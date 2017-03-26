@@ -25,21 +25,17 @@ package de.flapdoodle.embed.process.io.net;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.Proxy;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 
-import de.flapdoodle.embed.process.config.store.DownloadConfig;
 import de.flapdoodle.embed.process.config.store.TimeoutConfig;
-import de.flapdoodle.embed.process.distribution.Distribution;
-import de.flapdoodle.embed.process.io.directories.PropertyOrPlatformTempDir;
-import de.flapdoodle.embed.process.io.file.Files;
 import de.flapdoodle.embed.process.types.Optionals;
 import de.flapdoodle.embed.process.types.ThrowingFunction;
 import de.flapdoodle.embed.process.types.ThrowingSupplier;
@@ -50,29 +46,6 @@ public abstract class UrlStreams {
 	static final int BUFFER_LENGTH = 1024 * 8 * 8;
 	static final int READ_COUNT_MULTIPLIER = 100;
 
-	public File download(DownloadConfig downloadConfig, Distribution distribution) throws IOException {
-
-		File ret = Files.createTempFile(PropertyOrPlatformTempDir.defaultInstance(), downloadConfig.getFileNaming()
-				.nameFor(downloadConfig.getDownloadPrefix(), "." + downloadConfig.getPackageResolver().packageFor(distribution).archiveType()));
-		
-		String userAgent = downloadConfig.getUserAgent();
-		TimeoutConfig timeoutConfig = downloadConfig.getTimeoutConfig();
-		URL url = new URL(downloadConfig.getDownloadPath().getPath(distribution) + downloadConfig.getPackageResolver().packageFor(distribution).archivePath());
-		Optional<Proxy> proxy = downloadConfig.proxyFactory().map(f -> f.createProxy());
-		
-		if (ret.canWrite()) {
-			
-			URLConnection openConnection = urlConnectionOf(url, userAgent, timeoutConfig, proxy);
-			downloadAndCopy(openConnection, () -> new BufferedOutputStream(new FileOutputStream(ret)), (readCount, contentLength) -> {
-				
-			});
-			
-		} else {
-			throw new IOException("Can not write " + ret);
-		}
-		return ret;
-	}
-	
 	public static <E extends Exception> void downloadTo(URLConnection connection, Path destination, DownloadCopyListener copyListener) throws IOException {
 		downloadTo(connection, destination, c -> downloadIntoTempFile(c, copyListener));
 	}
@@ -80,8 +53,8 @@ public abstract class UrlStreams {
 	protected static <E extends Exception> void downloadTo(URLConnection connection, Path destination, ThrowingFunction<URLConnection, Path, E> urlToTempFile) throws IOException,E {
 		Preconditions.checkArgument(!destination.toFile().exists(), "destination exists");
 		Path tempFile = urlToTempFile.apply(connection);
-		java.nio.file.Files.copy(tempFile, destination);
-		java.nio.file.Files.delete(tempFile);
+		Files.copy(tempFile, destination);
+		Files.delete(tempFile);
 	}
 	
 	protected static Path downloadIntoTempFile(URLConnection connection, DownloadCopyListener copyListener) throws IOException, FileNotFoundException {
@@ -93,7 +66,7 @@ public abstract class UrlStreams {
 			return tempFile;
 		} finally {
 			if (!downloadSucceeded) {
-				java.nio.file.Files.delete(tempFile);
+				Files.delete(tempFile);
 			}
 		}
 	}

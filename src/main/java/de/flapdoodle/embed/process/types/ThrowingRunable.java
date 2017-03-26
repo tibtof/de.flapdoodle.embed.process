@@ -23,34 +23,6 @@
  */
 package de.flapdoodle.embed.process.types;
 
-import java.util.function.Function;
-import java.util.function.Supplier;
-
-public interface ThrowingSupplier<T, E extends Exception> {
-	T get() throws E;
-	
-	default <N extends Exception> ThrowingSupplier<T, N> mapException(Function<E, N> exceptionMapper) {
-		return () -> {
-			try {
-				return this.get();
-			} catch (Exception e) {
-				throw exceptionMapper.apply((E) e);
-			}
-		};
-	}
-	
-	default ThrowingSupplier<T, RuntimeException> mapToRuntimeException() {
-		return mapException(e -> new RuntimeException(e));
-	}
-	
-	default Supplier<T> onException(Function<E, T> exceptionToFallback) {
-		return () -> {
-			try {
-				return this.get();
-			}
-			catch (Exception e) {
-				return exceptionToFallback.apply((E) e);
-			}
-		};
-	}
+public interface ThrowingRunable<E extends Exception> {
+	void run() throws E;
 }

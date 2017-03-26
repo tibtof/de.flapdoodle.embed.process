@@ -40,12 +40,15 @@ import de.flapdoodle.embed.process.config.store.TimeoutConfig;
 import de.flapdoodle.embed.process.distribution.Distribution;
 import de.flapdoodle.embed.process.io.directories.PropertyOrPlatformTempDir;
 import de.flapdoodle.embed.process.io.file.Files;
+import de.flapdoodle.embed.process.io.net.UrlStreams;
 import de.flapdoodle.embed.process.io.progress.ProgressListener;
 import de.flapdoodle.embed.process.types.Percent;
 
 /**
+ * @see UrlStreams
  * Class for downloading runtime
  */
+@Deprecated
 public class Downloader implements IDownloader {
 
 	static final int DEFAULT_CONTENT_LENGTH = 20 * 1024 * 1024;
