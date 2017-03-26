@@ -1,0 +1,50 @@
+package de.flapdoodle.embed.process.io.net;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.Map;
+import java.util.Optional;
+
+import fi.iki.elonen.NanoHTTPD;
+import fi.iki.elonen.NanoHTTPD.Method;
+import fi.iki.elonen.NanoHTTPD.Response;
+import fi.iki.elonen.NanoHTTPD.Response.Status;
+
+public class HttpServers {
+
+	public static Server httpServer(int port, Listener listener) throws IOException {
+		return new Server(port, listener);
+	}
+	
+	public static class Server extends NanoHTTPD implements AutoCloseable {
+
+		private final Listener listener;
+
+		public Server(int port, Listener listener) throws IOException {
+			super(port);
+			this.listener = listener;
+			start(NanoHTTPD.SOCKET_READ_TIMEOUT, true);
+		}
+
+		@Override
+		public void close() {
+			this.stop();
+		}
+		
+		@Override
+		public Response serve(String uri, Method method, Map<String, String> headers, Map<String, String> parms, Map<String, String> files) {
+			Optional<Response> response = listener.serve(uri, method, headers, parms, files);
+			return response
+					.orElseGet(() -> super.serve(uri, method, headers, parms, files));
+		}
+	}
+	
+	@FunctionalInterface
+	public static interface Listener {
+		Optional<Response> serve(String uri, Method method, Map<String, String> headers, Map<String, String> parms, Map<String, String> files);
+	}
+
+	public static Response response(int status, String mimeType, byte[] data) {
+		return NanoHTTPD.newFixedLengthResponse(Status.lookup(status), mimeType, new ByteArrayInputStream(data), data.length);
+	}
+}

@@ -32,6 +32,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.util.HashSet;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class NetworkTest {
@@ -60,6 +61,7 @@ public class NetworkTest {
 	}
 	
 	@Test(expected=IOException.class)
+	@Ignore("works, but has no real benefit")
 	public void freeNetworkPortMustFailIfPoolIsTooLarge() throws IOException {
 		InetAddress address = Network.getLocalHost();
 		Network.getFreeServerPorts(address, 50000);
