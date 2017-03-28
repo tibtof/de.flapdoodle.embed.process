@@ -23,6 +23,23 @@
  */
 package de.flapdoodle.embed.process.types;
 
+import java.util.function.Function;
+
 public interface ThrowingRunable<E extends Exception> {
 	void run() throws E;
+	
+	default <N extends Exception> ThrowingRunable<N> mapException(Function<Exception, N> exceptionMapper) {
+		return () -> {
+			try {
+				this.run();
+			} catch (Exception e) {
+				throw exceptionMapper.apply(e);
+			}
+		};
+	}
+	
+	default ThrowingRunable<RuntimeException> mapToRuntimeException() {
+		return mapException(e -> new RuntimeException(e));
+	}
+
 }

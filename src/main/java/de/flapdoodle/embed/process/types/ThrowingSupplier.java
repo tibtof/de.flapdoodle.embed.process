@@ -29,12 +29,12 @@ import java.util.function.Supplier;
 public interface ThrowingSupplier<T, E extends Exception> {
 	T get() throws E;
 	
-	default <N extends Exception> ThrowingSupplier<T, N> mapException(Function<E, N> exceptionMapper) {
+	default <N extends Exception> ThrowingSupplier<T, N> mapException(Function<Exception, N> exceptionMapper) {
 		return () -> {
 			try {
 				return this.get();
 			} catch (Exception e) {
-				throw exceptionMapper.apply((E) e);
+				throw exceptionMapper.apply(e);
 			}
 		};
 	}
@@ -43,13 +43,13 @@ public interface ThrowingSupplier<T, E extends Exception> {
 		return mapException(e -> new RuntimeException(e));
 	}
 	
-	default Supplier<T> onException(Function<E, T> exceptionToFallback) {
+	default Supplier<T> onException(Function<Exception, T> exceptionToFallback) {
 		return () -> {
 			try {
 				return this.get();
 			}
 			catch (Exception e) {
-				return exceptionToFallback.apply((E) e);
+				return exceptionToFallback.apply(e);
 			}
 		};
 	}

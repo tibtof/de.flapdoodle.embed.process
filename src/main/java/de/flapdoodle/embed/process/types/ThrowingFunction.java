@@ -23,7 +23,35 @@
  */
 package de.flapdoodle.embed.process.types;
 
+import java.util.function.BiFunction;
+import java.util.function.Function;
+
 public interface ThrowingFunction<T,R,E extends Exception>  {
 	
 	R apply(T t) throws E;
+	
+	default <N extends Exception> ThrowingFunction<T, R, N> mapException(Function<Exception, N> exceptionMapper) {
+		return value -> {
+			try {
+				return this.apply(value);
+			} catch (Exception e) {
+				throw exceptionMapper.apply(e);
+			}
+		};
+	}
+	
+	default ThrowingFunction<T, R, RuntimeException> mapToRuntimeException() {
+		return mapException(e -> new RuntimeException(e));
+	}
+	
+	default Function<T, R> onException(BiFunction<Exception,T , R> exceptionToFallback) {
+		return value -> {
+			try {
+				return this.apply(value);
+			}
+			catch (Exception e) {
+				return exceptionToFallback.apply(e, value);
+			}
+		};
+	}
 }

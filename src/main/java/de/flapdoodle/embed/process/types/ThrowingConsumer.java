@@ -28,12 +28,12 @@ import java.util.function.Function;
 public interface ThrowingConsumer<T, E extends Exception> {
 	void accept(T value) throws E;
 	
-	default <N extends Exception> ThrowingConsumer<T, N> mapException(Function<E, N> exceptionMapper) {
+	default <N extends Exception> ThrowingConsumer<T, N> mapException(Function<Exception, N> exceptionMapper) {
 		return (value) -> {
 			try {
 				this.accept(value);
 			} catch (Exception e) {
-				throw exceptionMapper.apply((E) e);
+				throw exceptionMapper.apply(e);
 			}
 		};
 	}

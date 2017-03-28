@@ -97,7 +97,7 @@ public class HowToBuildAProcessConfigTest {
 	
 	private static State<Path> useOrDownloadArtifact(Path artifactPath, URL downloadUrl) {
 		if (!artifactPath.toFile().exists()) {
-			Try.with(() -> {
+			Try.supplier(() -> {
 				TimeoutConfig timeoutConfig=TimeoutConfig.defaults();
 				URLConnection connection = UrlStreams.urlConnectionOf(downloadUrl, "flapdoodle-user-agent", timeoutConfig, Optional.empty());
 				UrlStreams.downloadTo(connection, artifactPath, listener());
@@ -133,7 +133,7 @@ public class HowToBuildAProcessConfigTest {
 	}
 	
 	private static State<Path> artifactStore() {
-		return Try.with(() -> {
+		return Try.supplier(() -> {
 					Path artifactStore = Files.createTempDirectory("artifactStore-");
 					return State.of(artifactStore, (path) -> {
 						deleteDirectoryAndContent(path);

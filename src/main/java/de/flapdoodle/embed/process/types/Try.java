@@ -25,12 +25,20 @@ package de.flapdoodle.embed.process.types;
 
 public abstract class Try {
 
-	public static <T, E extends Exception> ThrowingSupplier<T, E> with(ThrowingSupplier<T, E> supplier) {
+	public static <T, R, E extends Exception> ThrowingFunction<T, R, E> function(ThrowingFunction<T, R, E> function) {
+		return function;
+	}
+	
+	public static <T, E extends Exception> ThrowingSupplier<T, E> supplier(ThrowingSupplier<T, E> supplier) {
 		return supplier;
 	}
 	
-	public static <T, E extends Exception> ThrowingConsumer<T, E> with(ThrowingConsumer<T, E> supplier) {
-		return supplier;
+	public static <T, E extends Exception> ThrowingConsumer<T, E> consumer(ThrowingConsumer<T, E> consumer) {
+		return consumer;
+	}
+
+	public static <E extends Exception> ThrowingRunable<E> runable(ThrowingRunable<E> runable) {
+		return runable;
 	}
 
 }
