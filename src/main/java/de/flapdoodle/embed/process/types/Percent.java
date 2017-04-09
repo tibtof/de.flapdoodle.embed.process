@@ -28,7 +28,7 @@ import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Immutable;
 import org.immutables.value.Value.Parameter;
 
-import de.flapdoodle.transition.Preconditions;
+import de.flapdoodle.checks.Preconditions;
 
 @Immutable
 public abstract class Percent {

@@ -49,7 +49,6 @@ import de.flapdoodle.embed.process.distribution.Version;
 import de.flapdoodle.embed.process.io.net.UrlStreams;
 import de.flapdoodle.embed.process.io.net.UrlStreams.DownloadCopyListener;
 import de.flapdoodle.embed.process.types.DownloadPath;
-import de.flapdoodle.embed.process.types.Try;
 import de.flapdoodle.transition.NamedType;
 import de.flapdoodle.transition.initlike.InitLike;
 import de.flapdoodle.transition.initlike.InitLike.Init;
@@ -59,6 +58,7 @@ import de.flapdoodle.transition.routes.Bridge;
 import de.flapdoodle.transition.routes.MergingJunction;
 import de.flapdoodle.transition.routes.SingleDestination;
 import de.flapdoodle.transition.routes.Start;
+import de.flapdoodle.types.Try;
 
 public class HowToBuildAProcessConfigTest {
 
@@ -103,7 +103,7 @@ public class HowToBuildAProcessConfigTest {
 				UrlStreams.downloadTo(connection, artifactPath, listener());
 				return State.of(artifactPath);
 			})
-			.mapToRuntimeException()
+			.mapCheckedException(RuntimeException::new)
 			.get();
 		}
 		return State.of(artifactPath);
@@ -139,7 +139,7 @@ public class HowToBuildAProcessConfigTest {
 						deleteDirectoryAndContent(path);
 					});
 				})
-				.mapToRuntimeException()
+				.mapCheckedException(RuntimeException::new)
 				.get();
 	}
 

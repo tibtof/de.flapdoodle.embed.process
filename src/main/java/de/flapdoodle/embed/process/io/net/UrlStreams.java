@@ -35,11 +35,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 
+import de.flapdoodle.checks.Preconditions;
 import de.flapdoodle.embed.process.config.store.TimeoutConfig;
-import de.flapdoodle.embed.process.types.Optionals;
-import de.flapdoodle.embed.process.types.ThrowingFunction;
-import de.flapdoodle.embed.process.types.ThrowingSupplier;
-import de.flapdoodle.transition.Preconditions;
+import de.flapdoodle.types.Optionals;
+import de.flapdoodle.types.ThrowingFunction;
+import de.flapdoodle.types.ThrowingSupplier;
 
 public abstract class UrlStreams {
 

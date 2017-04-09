@@ -23,9 +23,10 @@
  */
 package de.flapdoodle.embed.process.store;
 
+import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
 
 public interface DownloadCache {
-	Path getOrDownload(Path artifactPath, URL downloadUrl); 
+	Path getOrDownload(Path artifactPath, URL downloadUrl) throws IOException; 
 }
