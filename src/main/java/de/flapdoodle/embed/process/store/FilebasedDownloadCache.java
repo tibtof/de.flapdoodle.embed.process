@@ -29,6 +29,9 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Iterator;
+import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -52,7 +55,7 @@ public class FilebasedDownloadCache implements DownloadCache {
 	
 	@Override
 	public Path getOrDownload(Path artifactPath, URL downloadUrl) throws IOException {
-		Preconditions.checkArgument(!artifactPath.isAbsolute(), "is absolute artifact path: "+artifactPath);
+		Preconditions.checkArgument(!willEscapeDirectory(artifactPath), "invalid artifact path: "+artifactPath);
 		Path resolvedArtifactPath = directory.relativize(artifactPath);
 		if (!checkValidArtifact(resolvedArtifactPath)) {
 			Path tempFile=Files.createTempFile("download", "");
@@ -64,7 +67,25 @@ public class FilebasedDownloadCache implements DownloadCache {
 		return resolvedArtifactPath;
 	}
 
-	private static boolean checkValidArtifact(Path path) {
+	protected static boolean willEscapeDirectory(Path path) {
+		if (path.isAbsolute()) return true;
+		
+		String prefix = UUID.randomUUID().toString();
+		Path prefixedAndNormalized = Paths.get(prefix).resolve(path).normalize();
+		
+		return !prefixedAndNormalized.startsWith(prefix) || hasOnlyOneElement(prefixedAndNormalized);
+	}
+	
+	private static boolean hasOnlyOneElement(Path prefixedAndNormalized) {
+		Iterator<Path> iterator = prefixedAndNormalized.iterator();
+		if (iterator.hasNext()) {
+			iterator.next();
+			return !iterator.hasNext();
+		}
+		return false;
+	}
+
+	protected static boolean checkValidArtifact(Path path) {
 		File asFile = path.toFile();
 		return asFile.exists() && !asFile.isDirectory();
 	}
