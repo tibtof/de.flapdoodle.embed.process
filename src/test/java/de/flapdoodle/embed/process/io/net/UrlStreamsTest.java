@@ -44,6 +44,7 @@ import java.util.stream.Collectors;
 
 import org.junit.Test;
 
+import de.flapdoodle.embed.process.HttpServers;
 import de.flapdoodle.embed.process.io.net.UrlStreams.DownloadCopyListener;
 import de.flapdoodle.embed.process.runtime.Network;
 

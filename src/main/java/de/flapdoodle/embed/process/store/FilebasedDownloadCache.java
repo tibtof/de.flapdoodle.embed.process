@@ -32,7 +32,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.UUID;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 import de.flapdoodle.checks.Preconditions;
@@ -42,13 +41,11 @@ import de.flapdoodle.embed.process.io.net.UrlStreams.DownloadCopyListener;
 public class FilebasedDownloadCache implements DownloadCache {
 
 	private final Path directory;
-	private final BiConsumer<URL, Path> downloader;
 	private final Function<URL, URLConnection> urlAsConnection;
 	private final DownloadCopyListener listener;
 
-	public FilebasedDownloadCache(Path directory, BiConsumer<URL, Path> downloader, Function<URL, URLConnection> connection, DownloadCopyListener listener) {
+	public FilebasedDownloadCache(Path directory, Function<URL, URLConnection> connection, DownloadCopyListener listener) {
 		this.directory = directory;
-		this.downloader = downloader;
 		this.urlAsConnection = connection;
 		this.listener = listener;
 	}
@@ -56,13 +53,17 @@ public class FilebasedDownloadCache implements DownloadCache {
 	@Override
 	public Path getOrDownload(Path artifactPath, URL downloadUrl) throws IOException {
 		Preconditions.checkArgument(!willEscapeDirectory(artifactPath), "invalid artifact path: "+artifactPath);
-		Path resolvedArtifactPath = directory.relativize(artifactPath);
+		Path resolvedArtifactPath = directory.resolve(artifactPath);
 		if (!checkValidArtifact(resolvedArtifactPath)) {
 			Path tempFile=Files.createTempFile("download", "");
-			UrlStreams.downloadTo(urlAsConnection.apply(downloadUrl), tempFile, listener);
-			Files.copy(tempFile, resolvedArtifactPath);
-			downloader.accept(downloadUrl, resolvedArtifactPath);
-			Preconditions.checkArgument(checkValidArtifact(resolvedArtifactPath),"download %s to %s failed", downloadUrl, resolvedArtifactPath);
+			Files.delete(tempFile);
+			try {
+				UrlStreams.downloadTo(urlAsConnection.apply(downloadUrl), tempFile, listener);
+				Files.copy(tempFile, resolvedArtifactPath);
+				Preconditions.checkArgument(checkValidArtifact(resolvedArtifactPath),"download %s to %s failed", downloadUrl, resolvedArtifactPath);
+			} finally {
+				Files.deleteIfExists(tempFile);
+			}
 		}
 		return resolvedArtifactPath;
 	}

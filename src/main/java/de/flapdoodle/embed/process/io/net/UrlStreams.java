@@ -51,7 +51,7 @@ public abstract class UrlStreams {
 	}
 
 	protected static <E extends Exception> void downloadTo(URLConnection connection, Path destination, ThrowingFunction<URLConnection, Path, E> urlToTempFile) throws IOException,E {
-		Preconditions.checkArgument(!destination.toFile().exists(), "destination exists");
+		Preconditions.checkArgument(!destination.toFile().exists(), "destination exists: %s",destination);
 		Path tempFile = urlToTempFile.apply(connection);
 		Files.copy(tempFile, destination);
 		Files.delete(tempFile);
